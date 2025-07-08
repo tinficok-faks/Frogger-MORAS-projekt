@@ -1,4 +1,4 @@
-// A single 16×16 car sprite that wraps around the play-field
+// A single 16*16 car sprite that wraps around the play-field
 class Car {
 
     field int x;        // pixel-space left coordinate (-16 .. 224)
