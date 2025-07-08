@@ -1,0 +1,35 @@
+// A solid river log; default length = 3 tiles (48 px)
+class Log {
+
+    field int x;
+    field int row;
+    field int speed;
+    field int length;  // in grid cells
+
+    constructor Log new(int r, int startX, int spd) {
+        let row    = r;
+        let x      = startX;
+        let speed  = spd;
+        let length = 3;   // fixed 3-tile log
+        return this;
+    }
+
+    method void update() {
+        let x = x + speed;
+
+        if (x < -(length * 16)) { let x = 224;          }
+        if (x > 224)            { let x = -(length * 16); }
+        return;
+    }
+
+    method void draw () {
+        do Sprites.drawLog(x, row * 16, length);
+        return;
+    }
+
+    // ----- helper accessors -----
+    method int getX()      { return x;      }
+    method int getRow()    { return row;    }
+    method int getSpeed()  { return speed;  }
+    method int getLength() { return length; }
+}

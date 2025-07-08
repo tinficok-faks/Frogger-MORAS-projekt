@@ -1,0 +1,42 @@
+// A single 16×16 car sprite that wraps around the play-field
+class Car {
+
+    field int x;        // pixel-space left coordinate (-16 .. 224)
+    field int row;      // grid row (10-12)
+    field int speed;    // -1 or +1 px per frame
+
+    constructor Car new(int r, int startX, int spd) {
+        let row   = r;
+        let x     = startX;
+        let speed = spd;
+        return this;
+    }
+
+    method void update() {
+        let x = x + speed;
+
+        if (x < -16)  { let x = 224;  }
+        if (x > 224)  { let x = -16; }
+        return;
+    }
+
+    // Draw filled 16×16 block, with clipping
+    method void draw () {
+        var int xL, yT;
+
+        // convert to screen pixels (whole game is shifted 8 px)
+        let xL = x + 8;
+        let yT = row * 16;
+
+        // ---- skip if the sprite is completely off-screen ----
+        if ((xL + 15) < 0) { return; }      // full sprite left of screen
+        if (xL > 511) { return; }           // full sprite right of screen
+
+        // partly or fully visible -> delegate drawing
+        do Sprites.drawCar(xL, yT);
+        return;
+    }
+
+    method int getX()   { return x;   }
+    method int getRow() { return row; }
+}

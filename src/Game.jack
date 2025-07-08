@@ -1,0 +1,311 @@
+// Running and handling game logic
+class Game {
+
+    // -- pseudo-constants (static so it can be used everywhere)
+    static int CELL, GRID_W, GRID_H;
+    static int PLAY_W, PLAY_H, PLAY_LEFT, PLAY_TOP;
+    static int HUD_X,  HUD_Y;
+    static int WATER_PERIOD;
+
+    // -- remembers what we last showed on the HUD
+    static int LAST_LIVES;
+    static int LAST_SCORE;
+
+    // -- fields
+    field Frog  frog;
+    field Array cars;                // Array of Car
+    field Array logs;                // Array of Log
+    field int   numCars, numLogs;
+    field int   lives, score, frame;
+    field int   tick;                // frame counter
+    field int   waterTimer;          // counts frames between drown-checks
+    field boolean decorDrawn;
+
+    // ---- Constructor - allocates everything, sets initial values
+    constructor Game new () {
+        var int i, r, x0, spd, lane;
+
+        // "constants"
+        let CELL      = 16;
+        let GRID_W    = 14;
+        let GRID_H    = 16;
+        let PLAY_W    = 224;
+        let PLAY_H    = 256;
+        let PLAY_LEFT = 0;
+        let PLAY_TOP  = 0;
+        let HUD_X     = 240;
+        let HUD_Y     = 20;
+
+        // game state
+        let lives = 3;
+        let score = 0;
+        let frame = 0;
+        let tick = 0;
+        let WATER_PERIOD = 3;       // how many frames before it updates
+        let waterTimer = 0;
+        let decorDrawn = false;     // not yet drawn
+        
+        // frog starts bottom-centre
+        let frog = Frog.new(GRID_W / 2, GRID_H - 1);
+        
+        // ------------ car rows ---------------
+        let numCars = 12;
+        let cars = Array.new(numCars);
+        
+        let i = 0;
+        while (i < numCars) {
+        
+            let lane = i / 2;
+            let r = 13 - lane;
+        
+            // alternate directions by lane
+            let spd = 1;                     // default -> right
+            if ((lane & 1) = 1) {            // odd lanes <- left
+                let spd = -1;
+            }
+        
+            // -------- stagger start-x by lane -------
+            let x0 = lane * 40;              // 0,40,80,120,160
+        
+            if ((i & 1) = 1) {            // second car in same lane
+                let x0 = x0 + 112;        // half-field offset
+            }
+        
+            // wrap around if we stepped past the right edge
+            if (x0 > 223) {
+               let x0 = x0 - 224;
+            }
+        
+            let cars[i] = Car.new(r, x0, spd);
+            let i = i + 1;
+        }
+        
+        // ------------------- river log rows ---------
+        let numLogs = 6;
+        let logs = Array.new(numLogs);
+        
+        let i = 0;
+        while (i < numLogs) {
+            let r = 6 - i;
+        
+            let spd = 1;
+            if ((i & 1) = 1) { let spd = -1; }      // alternating directions, odd i -> left
+            
+            let x0 = i * 50;
+        
+            let logs[i] = Log.new(r, x0, spd);
+            let i = i + 1;
+        }
+        
+        // related to score and lives
+        let LAST_LIVES = -1;   // force first HUD update
+        let LAST_SCORE = -1;
+
+        return this;
+    }
+
+    // --------- main loop – runs until *lives* == 0
+    method void run () {
+        var boolean playing;
+
+        let playing = true;
+        do Screen.clearScreen();  // once, at start
+
+        while (playing) {
+            do update();
+            do draw();
+            do Sys.wait(30);      // about 33 FPS
+
+            if (lives = 0) { let playing = false; }
+        }
+        return;
+    }
+
+    // -------- Update every dynamic object & apply rules
+    method void update () {
+        var int i;
+        var Car c;
+        var boolean onLog;
+        var Log l;
+
+        // frog handles keyboard itself
+        do frog.update();
+
+        // ----------- cars ----------------
+        let i = 0;
+        while (i < numCars) {
+            let c = cars[i];   // copy pointer out of the Array
+            do c.update();
+
+            if (frog.collidesWith(c)) {
+                do frog.reset();
+                let lives = lives - 1;
+            }
+            let i = i + 1;
+        }
+
+        // ------------ logs -----------------
+        let i = 0;
+        while (i < numLogs) {
+            let l = logs[i];
+        
+            if (frog.touching(l) = 1) {
+                let onLog = true;
+                do frog.attachAndSnap(l);     // centre & inherit speed
+            }
+        
+            do l.update();
+        
+            let i = i + 1;
+        }
+
+        // if frog is on land (rows > 5) centre it on tile with which it shares the most space
+        if (frog.getRow() > 5) {
+            do frog.snapToLand();
+        }
+
+        // frog in water rows (1-6) but NOT on log -> death
+        if (onLog) {
+            // nothing
+        } else {
+            // ---------- WATER-DEATH CHECK ---------------
+            let waterTimer = waterTimer + 1;
+            if (waterTimer = WATER_PERIOD) {
+                // test only now, then reset the timer
+                let waterTimer = 0;
+
+                if (((frog.getRow() > 0) & (frog.getRow() < 7)) & (~onLog)) {
+                    do frog.reset();
+                    let lives = lives - 1;
+                }
+            }
+        }
+
+        if (~onLog) {                   // not riding on log, stop pixel accumulation
+            do frog.detach();           // <- new helper
+        }
+
+        // reached home (row 0) -> score
+        if (frog.getRow() = 0) {
+            let score = score + 50;
+            do frog.reset();
+        }
+
+        let frame = frame + 1;
+
+        // refresh HUD only once per logical frame
+        do drawHUD();
+
+        let tick = tick + 1;
+
+        return;
+    }
+
+    // helper – tell frog what horizontal speed to inherit this frame
+    method void setFrogCarry (int dx) {
+        do frog.setCarry(dx);
+        return;
+    }
+
+    // Whole-frame drawing
+    method void draw () {
+        var int i;
+        var Car c;
+        var Log l;
+        var int col, xL, xR;
+
+        if (~decorDrawn) {
+            do Decor.drawPanel();          // draw ornament once
+            let decorDrawn = true;         // never draw again
+        }
+
+        // clear play area
+        do Screen.setColor(false);      // black
+        do Screen.drawRectangle(
+            PLAY_LEFT, PLAY_TOP,
+            PLAY_LEFT + PLAY_W - 1,
+            PLAY_TOP  + PLAY_H - 1);
+        
+        do Screen.setColor(true);
+        do Screen.drawRectangle(
+            0, PLAY_TOP,
+            7, PLAY_TOP + PLAY_H - 1);
+
+        do Screen.drawRectangle(
+            PLAY_LEFT + PLAY_W, PLAY_TOP,
+            PLAY_LEFT + PLAY_W + 7,
+            PLAY_TOP + PLAY_H - 1);
+        
+        let col = 0;
+        while (col < GRID_W) {
+            let xL = PLAY_LEFT + col * CELL;        // left edge of cell
+            let xR = xL + CELL - 1;                 // right edge (15 px wide)     
+
+            if ((col & 1) = 1) {                    // odd columns → white
+                do Screen.setColor(true);           // white square
+                do Screen.drawRectangle(xL, 0, xR, CELL - 1);
+            }
+            
+            // even columns remain background-black      
+
+            let col = col + 1;
+        }
+        
+        do Screen.setColor(false);
+
+        // ------------ objects ----------------
+        // ---- draw() – cars
+        let i = 0;
+        while (i < numCars) {
+            let c = cars[i];
+            do c.draw();
+            let i = i + 1;
+        }
+
+        // ---- draw() – logs
+        let i = 0;
+        while (i < numLogs) {
+            let l = logs[i];
+            do l.draw();
+            let i = i + 1;
+        }
+        do frog.draw();
+
+        return;
+    }
+
+    method void drawHUD () {
+        var int colBase, rowMid;
+
+        let colBase = 32;                        // text column 32 * 8 = 256 px
+
+        let rowMid = (PLAY_H / 3)  / 8;         // roughly middle of a screen
+
+        // --------- LIVES ---------
+        if (~(lives = LAST_LIVES)) {            // lives changed?
+            do Output.moveCursor(rowMid, colBase);
+            do Output.printString("Lives:");
+            do Output.printInt(lives);
+            do Output.printString("   ");         // wipe tail
+            let LAST_LIVES = lives;
+        }
+
+        // --------- SCORE ---------
+        if (~(score = LAST_SCORE)) {            // score changed?
+            do Output.moveCursor(rowMid + 1, colBase);
+            do Output.printString("Score:");
+            do Output.printInt(score);
+            do Output.printString("   ");
+            let LAST_SCORE = score;
+        }
+
+        return;
+    }
+
+    // Free the large arrays
+    method void dispose () {
+        do cars.dispose();
+        do logs.dispose();
+        return;
+    }
+}

@@ -1,0 +1,12 @@
+// creates a Game object and lets it run
+class Main {
+
+    function void main() {
+        var Game g;
+
+        let g = Game.new();
+        do g.run();         // blocks until game-over
+        do g.dispose();     // free heap memory
+        return;
+    }
+}

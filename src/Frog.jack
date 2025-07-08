@@ -1,0 +1,202 @@
+class Frog {
+
+    field int col, row;         // grid position
+    field int facingDir;        // 0-up 1-right 2-down 3-left
+    field int carryDx;          // speed inherited from log this frame
+    field int carrySum;         // running pixel sum
+    field int lastKeyPressed;
+
+    // --- constructor ---
+    constructor Frog new (int c, int r) {
+        let col      = c;
+        let row      = r;
+        let facingDir = 0;
+        let carryDx  = 0;
+        let carrySum = 0;
+        let lastKeyPressed = 0;
+        return this;
+    }
+
+    // --- put frog back to start
+    method void reset () {
+        let col      = 7;
+        let row      = 15;
+        let carryDx  = 0;
+        let carrySum = 0;
+        return;
+    }
+
+    // --- per-frame logic: keyboard + carried-by-log move
+    method void update () {
+        var int key;
+
+        let key = Keyboard.keyPressed();
+
+        // -------------- arrow-key movement ------------------------
+        if ( (~(key = 0)) & (~(key = lastKeyPressed)) ) {
+
+            if (key = 131) {        // UP
+                do move(0, -1);
+                let facingDir = 0;
+            }
+
+            if (key = 133) {        //  DOWN
+                do move(0, 1);
+                let facingDir = 2;
+            }
+
+            if (key = 130) {        // LEFT
+                do move(-1, 0);
+                let facingDir = 3;
+            }
+
+            if (key = 132) {        // RIGHT
+                do move(1, 0);
+                let facingDir = 1;
+            }
+
+            // after any hop, clear pixel drift so log logic is stable
+            let carryDx  = 0;
+            let carrySum = 0;
+        }
+
+        // remember key for next frame
+        let lastKeyPressed = key;
+
+        // carried by log
+        if (carryDx = 0) {
+            // nothing, not on log
+        } else {
+            let carrySum = carrySum + carryDx;   // +/- 1 each frame
+
+            if (carrySum = 16) {                 // moved a whole 16 px right
+                let carrySum = 0;
+                do move(1, 0);                   // shift 1 grid cell right
+            }
+            if (carrySum = -16) {                // moved 16 px left
+                let carrySum = 0;
+                do move(-1, 0);
+            }
+        }
+
+        // clear carry each frame – renewed if still on log
+        let carryDx = 0;
+        return;
+    }
+
+    // called by Game when frog is "standing" on some log
+    method void attach (Log l) {
+        let carryDx = l.getSpeed();
+        let carrySum = 0;           // resets pixel alligment on logs
+        return;
+    }
+
+    method void detach () {
+        let carryDx  = 0;
+        let carrySum = 0;
+        return;
+    }
+
+    // Centres frog on given log and starts the ride
+    method void attachAndSnap (Log l) {
+        var int centreX, newCol;
+
+        // pixel x of log’s centre
+        let centreX = l.getX() + (l.getLength() * 8);   // 8 = half-tile
+
+        // convert to grid col & carrySum
+        let newCol   = centreX / 16;                    // integer division
+        let carrySum = centreX - (newCol * 16);
+
+        let col     = newCol;
+        let carryDx = l.getSpeed();
+        return;
+    }
+
+    // After a keyboard hop onto ground rows: pick the tile with the
+    // greatest horizontal overlap and centre on it
+    method void snapToLand () {
+        var int pixelX, newCol;
+
+        let pixelX  = col * 16 + carrySum;    // exact pixel left
+        let newCol  = (pixelX + 8) / 16;      // round to nearest tile
+
+        let col     = newCol;
+        let carrySum = 0;
+        let carryDx  = 0;
+        return;
+    }
+
+    // move by whole grid steps, stay inside 14×16 board
+    method void move (int dc, int dr) {
+        var int nc, nr;
+
+        let nc = col + dc;
+        let nr = row + dr;
+
+        // reject out-of-bounds moves
+        if ( (nc < 0) | (nc > 13) | (nr < 0) | (nr > 15) ) {
+            // do nothing
+        } else {
+            let col = nc;
+            let row = nr;
+        }
+        return;
+    }
+
+    // render frog sprite
+    method void draw () {
+        var int xL, yT;
+
+        // game field is shifted 8 px right
+        let xL = col * 16 + 8;
+        let yT = row * 16;
+
+        do Sprites.drawFrog(xL, yT);
+        return;
+    }
+
+
+    // ----- helper for Game -----
+    method int getRow () { return row; }
+
+    // each frame set drift speed (-1,0, or +1)
+    method void setCarry (int dx) {
+        let carryDx = dx;
+        return;
+    }
+
+    // car collision – share row AND overlap 1 grid cell
+    method boolean collidesWith (Car c) {
+        var int diff;
+
+        if (c.getRow() = row) {
+            let diff = Math.abs( (c.getX() / 16) - col );
+            if (diff < 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // If any pixel of frog overlaps log sprite, return 1 (true);
+    // Also record which log we touched so Game can snap it
+    method int touching (Log l) {
+        var int frogL, frogR, logL, logR;
+
+        // share same row?
+        if (~(l.getRow() = row)) { return 0; }
+
+        // frog bounds including pixel drift (+8 = border)
+        let frogL = col * 16 + carrySum;
+        let frogR = frogL + 15;
+
+        let logL  = l.getX();
+        let logR  = logL + (l.getLength() * 16) - 1;
+
+        if (frogR < logL) { return 0; }
+        if (frogL > logR) { return 0; }
+
+        return 1;          // at least one pixel overlaps
+    }
+}

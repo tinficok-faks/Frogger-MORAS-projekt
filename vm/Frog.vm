@@ -1,0 +1,386 @@
+function Frog.new 0
+push constant 6
+call Memory.alloc 1
+pop pointer 0
+push argument 0
+pop this 0
+push argument 1
+pop this 1
+push constant 0
+pop this 2
+push constant 0
+pop this 3
+push constant 0
+pop this 4
+push constant 0
+pop this 5
+push pointer 0
+return
+function Frog.reset 0
+push argument 0
+pop pointer 0
+push constant 7
+pop this 0
+push constant 15
+pop this 1
+push constant 0
+pop this 3
+push constant 0
+pop this 4
+push constant 0
+return
+function Frog.update 1
+push argument 0
+pop pointer 0
+call Keyboard.keyPressed 0
+pop local 0
+push local 0
+push constant 0
+eq
+not
+push local 0
+push this 5
+eq
+not
+and
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push local 0
+push constant 131
+eq
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
+push pointer 0
+push constant 0
+push constant 1
+neg
+call Frog.move 3
+pop temp 0
+push constant 0
+pop this 2
+label IF_FALSE1
+push local 0
+push constant 133
+eq
+if-goto IF_TRUE2
+goto IF_FALSE2
+label IF_TRUE2
+push pointer 0
+push constant 0
+push constant 1
+call Frog.move 3
+pop temp 0
+push constant 2
+pop this 2
+label IF_FALSE2
+push local 0
+push constant 130
+eq
+if-goto IF_TRUE3
+goto IF_FALSE3
+label IF_TRUE3
+push pointer 0
+push constant 1
+neg
+push constant 0
+call Frog.move 3
+pop temp 0
+push constant 3
+pop this 2
+label IF_FALSE3
+push local 0
+push constant 132
+eq
+if-goto IF_TRUE4
+goto IF_FALSE4
+label IF_TRUE4
+push pointer 0
+push constant 1
+push constant 0
+call Frog.move 3
+pop temp 0
+push constant 1
+pop this 2
+label IF_FALSE4
+push constant 0
+pop this 3
+push constant 0
+pop this 4
+label IF_FALSE0
+push local 0
+pop this 5
+push this 3
+push constant 0
+eq
+if-goto IF_TRUE5
+goto IF_FALSE5
+label IF_TRUE5
+goto IF_END5
+label IF_FALSE5
+push this 4
+push this 3
+add
+pop this 4
+push this 4
+push constant 16
+eq
+if-goto IF_TRUE6
+goto IF_FALSE6
+label IF_TRUE6
+push constant 0
+pop this 4
+push pointer 0
+push constant 1
+push constant 0
+call Frog.move 3
+pop temp 0
+label IF_FALSE6
+push this 4
+push constant 16
+neg
+eq
+if-goto IF_TRUE7
+goto IF_FALSE7
+label IF_TRUE7
+push constant 0
+pop this 4
+push pointer 0
+push constant 1
+neg
+push constant 0
+call Frog.move 3
+pop temp 0
+label IF_FALSE7
+label IF_END5
+push constant 0
+pop this 3
+push constant 0
+return
+function Frog.attach 0
+push argument 0
+pop pointer 0
+push argument 1
+call Log.getSpeed 1
+pop this 3
+push constant 0
+pop this 4
+push constant 0
+return
+function Frog.detach 0
+push argument 0
+pop pointer 0
+push constant 0
+pop this 3
+push constant 0
+pop this 4
+push constant 0
+return
+function Frog.attachAndSnap 2
+push argument 0
+pop pointer 0
+push argument 1
+call Log.getX 1
+push argument 1
+call Log.getLength 1
+push constant 8
+call Math.multiply 2
+add
+pop local 0
+push local 0
+push constant 16
+call Math.divide 2
+pop local 1
+push local 0
+push local 1
+push constant 16
+call Math.multiply 2
+sub
+pop this 4
+push local 1
+pop this 0
+push argument 1
+call Log.getSpeed 1
+pop this 3
+push constant 0
+return
+function Frog.snapToLand 2
+push argument 0
+pop pointer 0
+push this 0
+push constant 16
+call Math.multiply 2
+push this 4
+add
+pop local 0
+push local 0
+push constant 8
+add
+push constant 16
+call Math.divide 2
+pop local 1
+push local 1
+pop this 0
+push constant 0
+pop this 4
+push constant 0
+pop this 3
+push constant 0
+return
+function Frog.move 2
+push argument 0
+pop pointer 0
+push this 0
+push argument 1
+add
+pop local 0
+push this 1
+push argument 2
+add
+pop local 1
+push local 0
+push constant 0
+lt
+push local 0
+push constant 13
+gt
+or
+push local 1
+push constant 0
+lt
+or
+push local 1
+push constant 15
+gt
+or
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+goto IF_END0
+label IF_FALSE0
+push local 0
+pop this 0
+push local 1
+pop this 1
+label IF_END0
+push constant 0
+return
+function Frog.draw 2
+push argument 0
+pop pointer 0
+push this 0
+push constant 16
+call Math.multiply 2
+push constant 8
+add
+pop local 0
+push this 1
+push constant 16
+call Math.multiply 2
+pop local 1
+push local 0
+push local 1
+call Sprites.drawFrog 2
+pop temp 0
+push constant 0
+return
+function Frog.getRow 0
+push argument 0
+pop pointer 0
+push this 1
+return
+function Frog.setCarry 0
+push argument 0
+pop pointer 0
+push argument 1
+pop this 3
+push constant 0
+return
+function Frog.collidesWith 1
+push argument 0
+pop pointer 0
+push argument 1
+call Car.getRow 1
+push this 1
+eq
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push argument 1
+call Car.getX 1
+push constant 16
+call Math.divide 2
+push this 0
+sub
+call Math.abs 1
+pop local 0
+push local 0
+push constant 1
+lt
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
+push constant 0
+not
+return
+label IF_FALSE1
+label IF_FALSE0
+push constant 0
+return
+function Frog.touching 4
+push argument 0
+pop pointer 0
+push argument 1
+call Log.getRow 1
+push this 1
+eq
+not
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push constant 0
+return
+label IF_FALSE0
+push this 0
+push constant 16
+call Math.multiply 2
+push this 4
+add
+pop local 0
+push local 0
+push constant 15
+add
+pop local 1
+push argument 1
+call Log.getX 1
+pop local 2
+push local 2
+push argument 1
+call Log.getLength 1
+push constant 16
+call Math.multiply 2
+add
+push constant 1
+sub
+pop local 3
+push local 1
+push local 2
+lt
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
+push constant 0
+return
+label IF_FALSE1
+push local 0
+push local 3
+gt
+if-goto IF_TRUE2
+goto IF_FALSE2
+label IF_TRUE2
+push constant 0
+return
+label IF_FALSE2
+push constant 1
+return

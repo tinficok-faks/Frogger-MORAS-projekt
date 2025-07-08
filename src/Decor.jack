@@ -1,0 +1,97 @@
+class Decor {
+    // draw once, no updates required
+    function void drawPanel () {
+        // ---------- locals -----------
+        var int P_L, P_T, P_W, P_H;               // panel geometry
+        var int inL, inT, inR, inB;               // inner area
+        var int cxL, cxD, cxU, cxR, midY;         // arrow centres
+        var int row, w, y;
+        var int rowLabel, colLabel;
+
+        // ------------- panel placement -----------------
+        let P_W = 160;                  // width  20 tiles
+        let P_H =  48;                  // height  6 tiles
+        let P_L = 264 + 32;             // 296 px from left
+        let P_T = 256 - P_H - 8;        // 200 px from top
+
+        // ------- inner box & mid-line -------
+        let inL  = P_L + 8;
+        let inT  = P_T + 8;
+        let inR  = P_L + P_W - 9;
+        let inB  = P_T + P_H - 9;
+        let midY = (inT + inB) / 2;
+
+        // ------- centres for arrows -------
+        let cxL = inL + 24;                 // ◀
+        let cxD = ((inL + inR) / 2) - 16;   // ▼
+        let cxR = inR - 24;                 // ▶
+        let cxU = (cxD + cxR) / 2;          // ▲
+
+        // ------- static label above the panel -------
+        let rowLabel = 17;                  // safe: last visible text row
+        let colLabel = P_L / 8;             // align with panel’s left edge
+        do Output.moveCursor(rowLabel, colLabel);
+        do Output.printString("Movement keys");
+
+        // ------- draw 8-px frame -------
+        do Screen.setColor(true);
+        do Screen.drawRectangle(P_L,           P_T,
+                                P_L + P_W - 1, P_T + 7);           // top
+        do Screen.drawRectangle(P_L,           P_T + P_H - 8,
+                                P_L + P_W - 1, P_T + P_H - 1);     // bottom
+        do Screen.drawRectangle(P_L,           P_T,
+                                P_L + 7,       P_T + P_H - 1);     // left
+        do Screen.drawRectangle(P_L + P_W - 8, P_T,
+                                P_L + P_W - 1, P_T + P_H - 1);     // right
+
+        // ------- ◀ arrow -------
+        let row = 0;
+        while (row < 16) {
+            if (row < 8) {
+                let w = row;
+                let y = midY - 8 + row;
+                do Screen.drawRectangle(cxL - 8, y, cxL - 8 + w, y);
+            } else {
+                let w = 15 - row;
+                let y = midY - 8 + row;
+                do Screen.drawRectangle(cxL - 8, y, cxL - 8 + w, y);
+            }
+            let row = row + 1;
+        }
+
+        // ------- ▼ arrow ------- */
+        let row = 0;
+        while (row < 16) {
+            let w = 15 - row;                  // top wide -> bottom point
+            let y = midY - 8 + row;
+            do Screen.drawRectangle(cxD - w, y, cxD + w, y);
+            let row = row + 1;
+        }
+
+        // ------- ▲ arrow -------
+        let row = 0;
+        while (row < 16) {
+            let w = row;                       // bottom wide <- top point
+            let y = midY - 8 + row;
+            do Screen.drawRectangle(cxU - w, y, cxU + w, y);
+            let row = row + 1;
+        }
+
+        // ------- ▶ arrow -------
+        let row = 0;
+        while (row < 16) {
+            if (row < 8) {
+                let w = row;
+                let y = midY - 8 + row;
+                do Screen.drawRectangle(cxR + 8 - w, y, cxR + 8, y);
+            } else {
+                let w = 15 - row;
+                let y = midY - 8 + row;
+                do Screen.drawRectangle(cxR + 8 - w, y, cxR + 8, y);
+            }
+            let row = row + 1;
+        }
+
+        return;
+    }
+}

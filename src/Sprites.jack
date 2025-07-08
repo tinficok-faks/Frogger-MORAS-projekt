@@ -1,0 +1,107 @@
+class Sprites {
+    function void drawLog(int x, int y, int tiles) {
+        var int xL, xR, yT, yB, gap, mid, i, px;
+    
+        // raw bounds in internal pixel space
+        let xL = x + 8;                       // side border
+        let xR = xL + (tiles * 16) - 1;
+    
+        // --- skip if totally outside the play area (8..231) ----------
+        if (xR < 8)   { return; }             // still left of field
+        if (xL > 231) { return; }             // already past right edge
+    
+        // --- clip to safe range --------------------------------------
+        if (xL < 8)   { let xL = 8;  }
+        if (xR > 231) { let xR = 231; }
+    
+        let yT = y;
+        let yB = yT + 15;
+    
+        // 1-pixel white frame
+        do Screen.setColor(true);
+        do Screen.drawRectangle(xL, yT, xR, yT);   // top
+        do Screen.drawRectangle(xL, yB, xR, yB);   // bottom
+        do Screen.drawRectangle(xL, yT, xL, yB);   // left
+        do Screen.drawRectangle(xR, yT, xR, yB);   // right
+    
+        // inner part of planks
+        let mid = yT + 6;                            // vertical centre
+        let gap = ((xR - xL + 1) - 30) / 4;          // four gaps
+    
+        let i  = 0;
+        let px = xL + gap;
+        while (i < 3) {
+            // draw plank only if still inside the clipped box
+            if ((px + 9) < (xR + 1)) {
+                do Screen.drawRectangle(px, mid, px + 9, mid + 3);
+            }
+            let px = px + 10 + gap;
+            let i  = i + 1;
+        }
+        return;
+    }
+
+    function void drawCar(int xL, int yT) {
+        var int px;
+
+        let px = xL - 16;
+
+        if (px < 0)   { let px = 0; }        // avoid negative coords
+        if (px > 497) { let px = 497; }      // 497 + 13 = 510 <= 511
+
+        do Screen.setColor(true);
+
+        // 1 — main body (14 px × 8 px)
+        do Screen.drawRectangle(
+                px, yT + 4,
+                px + 13, yT + 11);
+
+        // 2 — left pillar / fin / wheel (3 px × 16 px)
+        do Screen.drawRectangle(
+                px + 3, yT,
+                px + 5, yT + 15);
+
+        // 3 — right pillar (mirror)
+        do Screen.drawRectangle(
+                px + 8, yT,
+                px + 10, yT + 15);
+
+        return;
+    }
+
+    function void drawFrog(int xL, int yT) {
+        do Screen.setColor(true);
+
+        // central body ── 8 px wide, 10 px tall
+        do Screen.drawRectangle(
+                xL + 4,  yT + 3,     // left , top
+                xL + 11, yT + 12);   // right, bottom
+
+        // head / upper shoulders - 6 px wide, 4 px tall
+        do Screen.drawRectangle(
+                xL + 5,  yT + 1,
+                xL + 10, yT + 4);
+
+        // left arm (upper)
+        do Screen.drawRectangle(
+                xL + 1,  yT + 1,
+                xL + 2,  yT + 6);
+
+        // left leg (lower)
+        do Screen.drawRectangle(
+                xL + 1,  yT + 9,
+                xL + 2,  yT + 14);
+
+        // right arm (upper)
+        do Screen.drawRectangle(
+                xL + 13, yT + 1,
+                xL + 14, yT + 6);
+
+        // right leg (lower)
+        do Screen.drawRectangle(
+                xL + 13, yT + 9,
+                xL + 14, yT + 14);
+
+        return;
+    }
+}
